@@ -26,7 +26,7 @@ RUN a2enmod rewrite
 
 # 8. Bơm RAM vô hạn cho Composer và cài thư viện (bỏ qua rào cản nền tảng)
 ENV COMPOSER_MEMORY_LIMIT=-1
-RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs
+RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
 
 # 9. Cài Node và nén giao diện
 RUN npm install && npm run build
