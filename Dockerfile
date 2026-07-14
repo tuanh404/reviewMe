@@ -26,7 +26,7 @@ RUN a2enmod rewrite
 
 # 8. Cài thư viện chuẩn xác (BỎ cờ ép buộc để Composer chạy an toàn)
 ENV COMPOSER_MEMORY_LIMIT=-1
-RUN composer install --no-dev --optimize-autoloader --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-scripts --ignore-platform-reqs
 
 # 9. Cài Node và nén giao diện
 RUN npm install && npm run build
