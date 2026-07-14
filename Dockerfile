@@ -1,7 +1,7 @@
-# 1. Dùng hệ điều hành nền có sẵn PHP 8.2 và máy chủ Apache
-FROM php:8.2-apache
+# 1. Nâng cấp thẳng lên PHP 8.3 để đồng bộ với môi trường của bro
+FROM php:8.3-apache
 
-# 2. Cài đặt đầy đủ các gói mở rộng (extensions) mà Laravel yêu cầu
+# 2. Cài đặt các công cụ và tiện ích mở rộng cốt lõi
 RUN apt-get update && apt-get install -y \
     libzip-dev zip unzip git curl \
     libpng-dev libonig-dev libxml2-dev \
@@ -20,13 +20,13 @@ WORKDIR /var/www/html
 # 6. Copy toàn bộ code vào trong container
 COPY . .
 
-# 7. Cấu hình máy chủ Apache
+# 7. Cấu hình máy chủ Apache trỏ đúng vào thư mục public của Laravel
 RUN sed -i 's!/var/www/html!/var/www/html/public!g' /etc/apache2/sites-available/000-default.conf
 RUN a2enmod rewrite
 
-# 8. Bơm RAM vô hạn cho Composer và cài thư viện (bỏ qua rào cản nền tảng)
+# 8. Cài thư viện chuẩn xác (BỎ cờ ép buộc để Composer chạy an toàn)
 ENV COMPOSER_MEMORY_LIMIT=-1
-RUN composer install --no-dev --optimize-autoloader --ignore-platform-reqs --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-scripts
 
 # 9. Cài Node và nén giao diện
 RUN npm install && npm run build
@@ -37,5 +37,5 @@ RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cac
 # 11. Mở cổng mạng 80
 EXPOSE 80
 
-# 12. Lệnh khởi động
+# 12. Lệnh khởi động: Tự động chạy Database Migration rồi bật web
 CMD php artisan migrate --force && apache2-foreground
