@@ -215,13 +215,21 @@ tailwind.config = {
             selectedReview.likes += selectedReview.liked ? 1 : -1;
             updateLikeView(); // Vẽ lại tim lên màn hình
 
+            // 1. Tạo hoặc lấy mã định danh "bất tử" cho người dùng này
+            let guestSessionId = localStorage.getItem('guest_session_id');
+            if (!guestSessionId) {
+                // Nếu chưa có, tạo một chuỗi ngẫu nhiên (VD: guest_a1b2c3d4)
+                guestSessionId = 'guest_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('guest_session_id', guestSessionId);
+            }
+
             try {
                 // 2. Âm thầm gọi API Back-end của bro ở chế độ nền
                 // (Giả sử route API của bro là POST /api/reviews/{id}/like)
                 const response = await fetch(`/api/reviews/${selectedReview.id}/like`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') },
-                    body: JSON.stringify({})
+                    body: JSON.stringify({ session_id: guestSessionId })
                 });
 
                 if (!response.ok) {
@@ -237,27 +245,6 @@ tailwind.config = {
         });
     }
 
-    // 1. Tạo hoặc lấy mã định danh "bất tử" cho người dùng này
-    let guestSessionId = localStorage.getItem('guest_session_id');
-    if (!guestSessionId) {
-        // Nếu chưa có, tạo một chuỗi ngẫu nhiên (VD: guest_a1b2c3d4)
-        guestSessionId = 'guest_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('guest_session_id', guestSessionId);
-    }
-
-    // 2. Gửi lệnh Like kèm theo cái mã định danh đó
-    const response = await fetch(`/api/reviews/${selectedReview.id}/like`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        },
-        // ĐÂY CHÍNH LÀ CHÌA KHÓA: Nhét cái session_id vào cục hàng gửi đi
-        body: JSON.stringify({
-            session_id: guestSessionId
-        })
-    });
 
     // --- LOGIC VẬT LÝ BÓNG RƠI (GIỮ NGUYÊN) ---
     function removeBoundaries() {
