@@ -220,7 +220,8 @@ tailwind.config = {
                 // (Giả sử route API của bro là POST /api/reviews/{id}/like)
                 const response = await fetch(`/api/reviews/${selectedReview.id}/like`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') }
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') },
+                    body: JSON.stringify({})
                 });
 
                 if (!response.ok) {
