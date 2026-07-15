@@ -69,40 +69,20 @@ class ReviewController extends Controller
   // 3. Thả tim
   public function like(Request $request, $id)
   {
-    // Tìm quả bóng review
     $review = \App\Models\Review::find($id);
     if (!$review) {
       return response()->json(['error' => 'Không tìm thấy đánh giá'], 404);
     }
 
-    // Bắt lấy cái mã ẩn danh của khách
-    $sessionId = $request->input('session_id');
-    if (!$sessionId) {
-      return response()->json(['error' => 'Bắt buộc phải có session_id'], 400);
-    }
+    // Bắt lệnh từ JS gửi lên: Xem nó muốn 'like' hay 'unlike'
+    $action = $request->input('action');
 
-    // Tạo ra một cái chìa khóa trí nhớ duy nhất (Ví dụ: review_1_liked_by_guest-xyz)
-    $cacheKey = "review_{$id}_liked_by_{$sessionId}";
-
-    // BẬT CHẾ ĐỘ CÔNG TẮC (TOGGLE)
-    if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
-      // NẾU TRONG TRÍ NHỚ ĐÃ CÓ -> TỨC LÀ ĐÃ LIKE RỒI -> RÚT LẠI TIM (UNLIKE)
+    if ($action === 'unlike') {
       $review->decrement('likes_count');
-      \Illuminate\Support\Facades\Cache::forget($cacheKey); // Xóa khỏi trí nhớ
-
-      return response()->json([
-        'message' => 'Đã rút lại tim (Unlike)',
-        'likes_count' => $review->likes_count
-      ], 200);
+      return response()->json(['message' => 'Đã trừ tim', 'likes_count' => $review->likes_count]);
     } else {
-      // NẾU TRÍ NHỚ CHƯA CÓ -> TỨC LÀ LẦN ĐẦU BẤM -> THẢ TIM (LIKE)
       $review->increment('likes_count');
-      \Illuminate\Support\Facades\Cache::forever($cacheKey, true); // Khắc cốt ghi tâm vĩnh viễn
-
-      return response()->json([
-        'message' => 'Đã thả tim (Like)',
-        'likes_count' => $review->likes_count
-      ], 200);
+      return response()->json(['message' => 'Đã cộng tim', 'likes_count' => $review->likes_count]);
     }
   }
 

@@ -194,14 +194,16 @@ tailwind.config = {
     function updateLikeView() {
         if (!selectedReview || !likeCount || !likeButton || !heartIcon) return;
 
-        // --- ĐOẠN THÊM MỚI: ĐỒNG BỘ TRẠNG THÁI TỪ TRÍ NHỚ TRÌNH DUYỆT ---
+        // 1. Ép ID về dạng CHUỖI để không bị lỗi 5 !== "5"
+        let currentId = String(selectedReview.id);
         let likedList = JSON.parse(localStorage.getItem('liked_reviews') || '[]');
-        if (likedList.includes(selectedReview.id)) {
-            selectedReview.liked = true; // Trình duyệt nhớ là đã Like -> Ép tim đỏ
+
+        // 2. Đồng bộ trạng thái từ trí nhớ
+        if (likedList.includes(currentId)) {
+            selectedReview.liked = true;
         } else {
             selectedReview.liked = false;
         }
-        // ---------------------------------------------------------------
 
         // Cập nhật số tim và trạng thái nút
         likeCount.textContent = String(selectedReview.likes || 0);
@@ -218,37 +220,41 @@ tailwind.config = {
         likeButton.addEventListener("click", async function () {
             if (!selectedReview || selectedReview.status !== "public") return;
 
-            // 1. Áp dụng Optimistic UI: Đổi giao diện NGAY LẬP TỨC cho mượt
+            // 1. Tính toán trước xem là đang muốn Like hay Unlike
             const wasLiked = selectedReview.liked;
             selectedReview.liked = !wasLiked;
             selectedReview.likes += selectedReview.liked ? 1 : -1;
-            updateLikeView(); // Vẽ lại tim lên màn hình
 
-            // --- ĐOẠN THÊM MỚI: CẬP NHẬT TRÍ NHỚ TRÌNH DUYỆT ---
+            // 2. LƯU VÀO TRÌNH DUYỆT TRƯỚC (QUAN TRỌNG NHẤT!!!)
+            let currentId = String(selectedReview.id);
             let likedList = JSON.parse(localStorage.getItem('liked_reviews') || '[]');
+
             if (selectedReview.liked) {
-                if (!likedList.includes(selectedReview.id)) likedList.push(selectedReview.id);
+                if (!likedList.includes(currentId)) likedList.push(currentId);
             } else {
-                // Nếu unlike thì rút ID quả bóng ra khỏi danh sách
-                likedList = likedList.filter(id => id !== selectedReview.id);
+                likedList = likedList.filter(id => id !== currentId);
             }
             localStorage.setItem('liked_reviews', JSON.stringify(likedList));
-            // ---------------------------------------------------
 
-            // 1. Tạo hoặc lấy mã định danh "bất tử" cho người dùng này
+            // 3. VẼ LẠI GIAO DIỆN SAU KHI ĐÃ LƯU XONG
+            updateLikeView();
+
+            // 4. Lấy Session ID gửi Backend
             let guestSessionId = localStorage.getItem('guest_session_id');
             if (!guestSessionId) {
-                // Nếu chưa có, tạo một chuỗi ngẫu nhiên (VD: guest_a1b2c3d4)
                 guestSessionId = 'guest_' + Math.random().toString(36).substr(2, 9);
                 localStorage.setItem('guest_session_id', guestSessionId);
             }
 
             try {
-                // 2. Âm thầm gọi API Back-end của bro ở chế độ nền
-                // (Giả sử route API của bro là POST /api/reviews/{id}/like)
+                // 5. Bắn API
                 const response = await fetch(`/api/reviews/${selectedReview.id}/like`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+                    },
                     body: JSON.stringify({ session_id: guestSessionId })
                 });
 
@@ -256,10 +262,19 @@ tailwind.config = {
                     throw new Error("API Back-end trả về lỗi");
                 }
             } catch (error) {
-                // 3. Nếu mạng lỗi hoặc Server sập -> Hoàn tác lại trái tim (Rollback)
                 console.error("Lỗi thả tim:", error);
+
+                // Nếu lỗi mạng, khôi phục lại mọi thứ (Rollback)
                 selectedReview.liked = wasLiked;
                 selectedReview.likes += selectedReview.liked ? 1 : -1;
+
+                if (wasLiked) {
+                    if (!likedList.includes(currentId)) likedList.push(currentId);
+                } else {
+                    likedList = likedList.filter(id => id !== currentId);
+                }
+                localStorage.setItem('liked_reviews', JSON.stringify(likedList));
+
                 updateLikeView();
             }
         });
