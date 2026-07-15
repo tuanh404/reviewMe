@@ -237,6 +237,28 @@ tailwind.config = {
         });
     }
 
+    // 1. Tạo hoặc lấy mã định danh "bất tử" cho người dùng này
+    let guestSessionId = localStorage.getItem('guest_session_id');
+    if (!guestSessionId) {
+        // Nếu chưa có, tạo một chuỗi ngẫu nhiên (VD: guest_a1b2c3d4)
+        guestSessionId = 'guest_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('guest_session_id', guestSessionId);
+    }
+
+    // 2. Gửi lệnh Like kèm theo cái mã định danh đó
+    const response = await fetch(`/api/reviews/${selectedReview.id}/like`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        },
+        // ĐÂY CHÍNH LÀ CHÌA KHÓA: Nhét cái session_id vào cục hàng gửi đi
+        body: JSON.stringify({
+            session_id: guestSessionId
+        })
+    });
+
     // --- LOGIC VẬT LÝ BÓNG RƠI (GIỮ NGUYÊN) ---
     function removeBoundaries() {
         boundaries.forEach(boundary => Matter.Composite.remove(engine.world, boundary));
