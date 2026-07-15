@@ -194,6 +194,15 @@ tailwind.config = {
     function updateLikeView() {
         if (!selectedReview || !likeCount || !likeButton || !heartIcon) return;
 
+        // --- ĐOẠN THÊM MỚI: ĐỒNG BỘ TRẠNG THÁI TỪ TRÍ NHỚ TRÌNH DUYỆT ---
+        let likedList = JSON.parse(localStorage.getItem('liked_reviews') || '[]');
+        if (likedList.includes(selectedReview.id)) {
+            selectedReview.liked = true; // Trình duyệt nhớ là đã Like -> Ép tim đỏ
+        } else {
+            selectedReview.liked = false;
+        }
+        // ---------------------------------------------------------------
+
         // Cập nhật số tim và trạng thái nút
         likeCount.textContent = String(selectedReview.likes || 0);
         likeButton.setAttribute("aria-pressed", String(selectedReview.liked));
@@ -214,6 +223,17 @@ tailwind.config = {
             selectedReview.liked = !wasLiked;
             selectedReview.likes += selectedReview.liked ? 1 : -1;
             updateLikeView(); // Vẽ lại tim lên màn hình
+
+            // --- ĐOẠN THÊM MỚI: CẬP NHẬT TRÍ NHỚ TRÌNH DUYỆT ---
+            let likedList = JSON.parse(localStorage.getItem('liked_reviews') || '[]');
+            if (selectedReview.liked) {
+                if (!likedList.includes(selectedReview.id)) likedList.push(selectedReview.id);
+            } else {
+                // Nếu unlike thì rút ID quả bóng ra khỏi danh sách
+                likedList = likedList.filter(id => id !== selectedReview.id);
+            }
+            localStorage.setItem('liked_reviews', JSON.stringify(likedList));
+            // ---------------------------------------------------
 
             // 1. Tạo hoặc lấy mã định danh "bất tử" cho người dùng này
             let guestSessionId = localStorage.getItem('guest_session_id');
