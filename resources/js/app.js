@@ -220,7 +220,7 @@ tailwind.config = {
                 // (Giả sử route API của bro là POST /api/reviews/{id}/like)
                 const response = await fetch(`/api/reviews/${selectedReview.id}/like`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') }
                 });
 
                 if (!response.ok) {
@@ -303,7 +303,7 @@ tailwind.config = {
         try {
             // Lấy cục data mà Laravel đã nhét sẵn ở thẻ <head>
             const data = window.SERVER_REVIEWS || [];
-            
+
             if (data.length === 0) {
                 console.log("Chưa có quả bóng nào!");
                 return;
@@ -318,14 +318,14 @@ tailwind.config = {
                     nickname: rv.reviewer_name || "Khách",
                     message: rv.content,
                     tag: rv.tag || "Tự viết",
-                    likes: rv.likes || 0, 
+                    likes: rv.likes || 0,
                     liked: false,
                     status: rv.is_approved ? "public" : "private",
                     createdAt: new Date(rv.created_at).getTime()
                 };
-                
+
                 // Set độ trễ 50ms giữa mỗi quả bóng để nó rớt rào rào siêu nhanh
-                registerReview(review, index * 50); 
+                registerReview(review, index * 50);
             });
         } catch (error) {
             console.error("Lỗi nạp bóng siêu tốc:", error);
